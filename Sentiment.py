@@ -51,7 +51,7 @@ plt.ylabel('Count')
 plt.savefig('tweet_length_distribution.png')
 plt.show()
 
-# Word cloud for visual overview (requires wordcloud library - already in your pip install)
+# Word cloud for visual overview
 from wordcloud import WordCloud
 
 all_text = ' '.join(df['text'].astype(str))

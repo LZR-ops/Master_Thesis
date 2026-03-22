@@ -1,52 +1,75 @@
+# preprocess_vader.py
 # Preprocessing + VADER Baseline on full tweet_eval sentiment dataset
+# Updated March 2026 - with versioned cleaning (v1 basic vs v2 improved)
 
 import re
 import pandas as pd
 import nltk
+import emoji
+import contractions  # pip install contractions
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
 from datasets import load_dataset
+import os
 
-# One-time NLTK download
+# ── One-time downloads ──
 nltk.download('vader_lexicon', quiet=True)
 
+# ── Configuration ──
+SAVE_FOLDER_DATA   = 'data'
+SAVE_FOLDER_VISUAL = 'visuals'
+os.makedirs(SAVE_FOLDER_DATA,   exist_ok=True)
+os.makedirs(SAVE_FOLDER_VISUAL, exist_ok=True)
+
+# ── Load full dataset ──
 print("Loading full TweetEval sentiment dataset from Hugging Face...")
 dataset = load_dataset("cardiffnlp/tweet_eval", "sentiment")
-df = dataset['train'].to_pandas()  # ~45k rows
+df = dataset['train'].to_pandas()  # ~45,615 rows
+print(f"Loaded {len(df):,} tweets\n")
 
-print(f"Loaded {len(df):,} tweets")
+# ── Preprocessing functions ──
 
-# ── Preprocessing function ──
-def clean_tweet(text):
-    # Remove URLs
+def clean_tweet_v1(text):
+    """V1: Basic cleaning - original version"""
     text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
-    # Remove @mentions
     text = re.sub(r'@\w+', '', text)
-    # Remove # symbol but keep the word
     text = re.sub(r'#', '', text)
-    # Normalize multiple spaces
     text = re.sub(r'\s+', ' ', text).strip()
     return text.lower()
 
-# Apply cleaning (this may take 10–30 seconds on full dataset)
-print("Cleaning tweets...")
-df['clean_text'] = df['text'].apply(clean_tweet)
+
+def clean_tweet_v2(text):
+    """V2: Improved - emoji to text, contractions, better normalization"""
+    text = emoji.demojize(text, delimiters=("", ""))
+    text = contractions.fix(text)
+    text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'@\w+', '', text)
+    text = re.sub(r'#', '', text)
+    text = re.sub(r'[^a-zA-Z\s!?.,]', '', text)
+    text = re.sub(r'(.)\1{2,}', r'\1\1', text)
+    text = re.sub(r'\s+', ' ', text).strip().lower()
+    return text
+
+
+# ── Choose which cleaning version to use ──
+clean_function = clean_tweet_v2   # ← switch to clean_tweet_v1 for original
+version_tag    = "v2" if clean_function == clean_tweet_v2 else "v1"
+
+print(f"Cleaning tweets with version {version_tag.upper()}...")
+df['clean_text'] = df['text'].apply(clean_function)
 
 # ── VADER sentiment analysis ──
 print("Running VADER...")
 sia = SentimentIntensityAnalyzer()
 
-# Compound score: -1 (very negative) to +1 (very positive)
 df['vader_compound'] = df['clean_text'].apply(lambda x: sia.polarity_scores(x)['compound'])
 
-# Convert compound score to class labels (0=neg, 1=neu, 2=pos)
 def vader_to_class(score):
-    if score >= 0.05:
-        return 2   # Positive
-    elif score <= -0.05:
-        return 0   # Negative
-    else:
-        return 1   # Neutral
+    if score >= 0.05:    return 2   # Positive
+    elif score <= -0.05: return 0   # Negative
+    else:                return 1   # Neutral
 
 df['vader_pred'] = df['vader_compound'].apply(vader_to_class)
 
@@ -55,7 +78,7 @@ true_labels = df['label']
 pred_labels = df['vader_pred']
 
 accuracy = accuracy_score(true_labels, pred_labels)
-print(f"\nVADER Accuracy on full dataset: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"\nVADER Accuracy ({version_tag.upper()}): {accuracy:.4f} ({accuracy*100:.2f}%)")
 
 print("\nClassification Report:")
 print(classification_report(
@@ -65,69 +88,29 @@ print(classification_report(
     digits=4
 ))
 
-# Optional: Save predictions for later analysis
-print("Saving results...")
-df[['text', 'label', 'clean_text', 'vader_compound', 'vader_pred']].to_csv(
-    'data/vader_full_results.csv',
-    index=False
-)
-print("Results saved to: data/vader_full_results.csv")
+# ── Save predictions ──
+results_path = f'{SAVE_FOLDER_DATA}/vader_{version_tag}_results.csv'
+df[['text', 'label', 'clean_text', 'vader_compound', 'vader_pred']].to_csv(results_path, index=False)
+print(f"Results saved to: {os.path.abspath(results_path)}")
 
-# Add after classification_report
+# ── Visualizations ──
+print("Generating visualizations...")
 
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# Confusion matrix
+# Confusion Matrix
 cm = confusion_matrix(true_labels, pred_labels)
-plt.figure(figsize=(8, 6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-            xticklabels=['Neg', 'Neu', 'Pos'],
-            yticklabels=['Neg', 'Neu', 'Pos'])
-plt.title('VADER Confusion Matrix')
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.savefig('data/vader_confusion_matrix.png')
-plt.show()
-
-# Bar plot of F1-scores
-report = classification_report(true_labels, pred_labels, target_names=['Negative', 'Neutral', 'Positive'], output_dict=True)
-f1_scores = [report[c]['f1-score'] for c in ['Negative', 'Neutral', 'Positive']]
-plt.figure(figsize=(8, 5))
-sns.barplot(x=['Negative', 'Neutral', 'Positive'], y=f1_scores)
-plt.title('VADER F1-Score per Class')
-plt.ylabel('F1-Score')
-plt.ylim(0, 1)
-plt.savefig('data/vader_f1_per_class.png')
-plt.show()
-
-# ── Visualization: Confusion Matrix & F1-score bar plot ──
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-
-# Make sure visuals folder exists
-os.makedirs('visuals', exist_ok=True)
-
-# 1. Confusion Matrix
-from sklearn.metrics import confusion_matrix
-
-cm = confusion_matrix(true_labels, pred_labels)
-
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
             xticklabels=['Negative', 'Neutral', 'Positive'],
             yticklabels=['Negative', 'Neutral', 'Positive'])
-plt.title('VADER Confusion Matrix (Full Dataset)')
+plt.title(f'VADER Confusion Matrix ({version_tag.upper()}) - Full Dataset')
 plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
-cm_path = 'visuals/vader_confusion_matrix.png'
+cm_path = f'{SAVE_FOLDER_VISUAL}/vader_{version_tag}_confusion_matrix.png'
 plt.savefig(cm_path, dpi=300, bbox_inches='tight')
-plt.close()  # Close figure to free memory
+plt.close()
 print(f"Confusion matrix saved to: {os.path.abspath(cm_path)}")
 
-# 2. F1-score per class bar plot
+# Create report_dict for F1 scores (this line was missing!)
 report_dict = classification_report(
     true_labels,
     pred_labels,
@@ -135,19 +118,25 @@ report_dict = classification_report(
     output_dict=True
 )
 
-f1_scores = [
-    report_dict['Negative']['f1-score'],
-    report_dict['Neutral']['f1-score'],
-    report_dict['Positive']['f1-score']
-]
-
+# F1-score bar plot (fixed FutureWarning with hue)
 plt.figure(figsize=(8, 5))
-sns.barplot(x=['Negative', 'Neutral', 'Positive'], y=f1_scores, palette='viridis')
-plt.title('VADER F1-Score per Class (Full Dataset)')
+sns.barplot(x=['Negative', 'Neutral', 'Positive'], 
+            y=[report_dict['Negative']['f1-score'],
+               report_dict['Neutral']['f1-score'],
+               report_dict['Positive']['f1-score']],
+            hue=['Negative', 'Neutral', 'Positive'], 
+            palette='viridis', 
+            legend=False)
+plt.title(f'VADER F1-Score per Class ({version_tag.upper()})')
 plt.ylabel('F1-Score')
 plt.ylim(0, 1.0)
 plt.grid(axis='y', linestyle='--', alpha=0.7)
-f1_path = 'visuals/vader_f1_per_class.png'
+f1_path = f'{SAVE_FOLDER_VISUAL}/vader_{version_tag}_f1_per_class.png'
 plt.savefig(f1_path, dpi=300, bbox_inches='tight')
 plt.close()
 print(f"F1-score bar plot saved to: {os.path.abspath(f1_path)}")
+
+# ── Quick comparison reminder ──
+print("\nComparison reminder:")
+print(" - Previous run with v1 (basic cleaning): ~55.14%")
+print(f" - Current ({version_tag.upper()}): {accuracy:.4f}")
