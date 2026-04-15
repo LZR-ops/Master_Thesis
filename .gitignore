@@ -1,0 +1,28 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Large data files
+data/*.csv
+data/*.pkl
+*.csv
+
+# Model files (very large)
+models/
+results_distilbert/
+*.bin
+*.safetensors
+
+# Large images (if any get too big)
+visuals/*.png
+*.png
+
+# Streamlit & cache
+.streamlit/
+__pycache__/
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
