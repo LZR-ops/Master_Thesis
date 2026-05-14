@@ -24,13 +24,29 @@ df['sentiment'] = df['label'].map(label_map)
 print("\nSentiment Distribution:")
 print(df['sentiment'].value_counts(normalize=True) * 100)
 
-# Plot distribution
-plt.figure(figsize=(8, 5))
-sns.countplot(x='sentiment', data=df, order=['Negative', 'Neutral', 'Positive'])
-plt.title('Sentiment Distribution in TweetEval (Train Split)')
-plt.xlabel('Sentiment Class')
-plt.ylabel('Number of Tweets')
-plt.savefig('sentiment_distribution.png') 
+# Plot distribution with percentages
+plt.figure(figsize=(10, 6))
+
+ax = sns.countplot(x='sentiment', 
+                   data=df, 
+                   order=['Negative', 'Neutral', 'Positive'],
+                   palette=['#ef4444', '#64748b', '#22c55e'])
+
+plt.title('Sentiment Distribution in TweetEval Dataset (Train Split)', fontsize=14, pad=20)
+plt.xlabel('Sentiment Class', fontsize=12)
+plt.ylabel('Number of Tweets', fontsize=12)
+
+# Add percentage labels on top of each bar
+total = len(df)
+for p in ax.patches:
+    count = int(p.get_height())
+    percentage = f'{100 * count / total:.1f}%'
+    ax.annotate(percentage, 
+                (p.get_x() + p.get_width() / 2., p.get_height() + 300),  # adjust 300 if needed
+                ha='center', va='bottom', fontsize=11, fontweight='bold')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.savefig('visuals/sentiment_distribution_with_percentage.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 import os

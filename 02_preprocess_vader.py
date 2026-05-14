@@ -54,7 +54,7 @@ def clean_tweet_v2(text):
 
 
 # ── Choose which cleaning version to use ──
-clean_function = clean_tweet_v2   # ← switch to clean_tweet_v1 for original
+clean_function = clean_tweet_v1   # ← switch to clean_tweet_v1 for original
 version_tag    = "v2" if clean_function == clean_tweet_v2 else "v1"
 
 print(f"Cleaning tweets with version {version_tag.upper()}...")
