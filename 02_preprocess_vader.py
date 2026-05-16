@@ -1,12 +1,11 @@
 # preprocess_vader.py
 # Preprocessing + VADER Baseline on full tweet_eval sentiment dataset
-# Updated March 2026 - with versioned cleaning (v1 basic vs v2 improved)
 
 import re
 import pandas as pd
 import nltk
 import emoji
-import contractions  # pip install contractions
+import contractions  
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import seaborn as sns
@@ -110,7 +109,7 @@ plt.savefig(cm_path, dpi=300, bbox_inches='tight')
 plt.close()
 print(f"Confusion matrix saved to: {os.path.abspath(cm_path)}")
 
-# Create report_dict for F1 scores (this line was missing!)
+# Create report_dict for F1 scores
 report_dict = classification_report(
     true_labels,
     pred_labels,
@@ -118,7 +117,7 @@ report_dict = classification_report(
     output_dict=True
 )
 
-# F1-score bar plot (fixed FutureWarning with hue)
+# F1-score bar plot 
 plt.figure(figsize=(8, 5))
 sns.barplot(x=['Negative', 'Neutral', 'Positive'], 
             y=[report_dict['Negative']['f1-score'],

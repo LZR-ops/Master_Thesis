@@ -18,7 +18,7 @@ def load_models():
                                device=-1)
     topic_model = BERTopic(
         embedding_model="all-MiniLM-L6-v2",
-        min_topic_size=3,      # Lower threshold
+        min_topic_size=3,      
         verbose=False
     )
     return sentiment_model, topic_model
@@ -119,4 +119,4 @@ if st.button("🚀 Analyze Sentiment", type="primary"):
         st.info("Add more negative tweets to see key topics.")
 
 st.markdown("---")
-st.caption("Master's Thesis — Sentiment Analysis for Brand Reputation Management | Zerong")
+st.caption("Master's Thesis — Sentiment Analysis for Brand Reputation Management | Zerong Lu")

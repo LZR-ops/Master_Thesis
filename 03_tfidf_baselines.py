@@ -1,6 +1,5 @@
 # 03_tfidf_baselines.py
 # Traditional ML Baselines: TF-IDF + Classifiers on tweet_eval dataset
-# March 2026
 
 import re
 import pandas as pd
@@ -46,7 +45,7 @@ df['clean_text'] = df['text'].apply(basic_clean)
 X = df['clean_text']
 y = df['label']
 
-# Train-test split (stratified for class balance)
+# Train-test split 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )

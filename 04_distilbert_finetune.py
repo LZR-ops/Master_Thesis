@@ -1,6 +1,5 @@
 # 04_distilbert_finetune.py
 # DistilBERT Fine-tuning for Sentiment Analysis
-# Updated March 2026
 
 import pandas as pd
 from datasets import load_dataset, Dataset
@@ -16,8 +15,8 @@ os.makedirs('visuals', exist_ok=True)
 print("Loading TweetEval sentiment dataset...")
 dataset = load_dataset("cardiffnlp/tweet_eval", "sentiment")
 
-# Use a manageable sample for faster training (you can increase later)
-sample_size = 12000   # Good balance between speed and performance
+# Use a manageable sample for faster training 
+sample_size = 12000   # 2.5 hours
 train_df = dataset['train'].to_pandas().sample(n=sample_size, random_state=42)
 test_df  = dataset['test'].to_pandas().head(3000)
 
@@ -58,8 +57,8 @@ training_args = TrainingArguments(
     logging_steps=100,
     load_best_model_at_end=True,
     metric_for_best_model="accuracy",
-    report_to="none",           # Disable wandb / external logging
-    fp16=False,                 # Set True if you have GPU
+    report_to="none",          
+    fp16=False,                 
 )
 
 # ── Metrics ──
