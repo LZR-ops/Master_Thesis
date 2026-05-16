@@ -3,7 +3,8 @@
 
 
 
-<p align="justify">Purpose. This study explores the application of sentiment analysis techniques on social media data to support brand reputation management. The purpose is to examine how different natural language processing methods can help businesses detect and respond to public sentiment, particularly negative feedback, in real time.
+<p align="justify">
+Purpose. This study explores the application of sentiment analysis techniques on social media data to support brand reputation management. The purpose is to examine how different natural language processing methods can help businesses detect and respond to public sentiment, particularly negative feedback, in real time.
 
 Value. The insights from this study provide practical recommendations for companies seeking effective tools for brand reputation monitoring. It also offers valuable references for researchers interested in the intersection of data science, social media analytics, and business applications, especially in the context of ethical AI usage.
 
@@ -15,4 +16,5 @@ analysis and extraction of key topics from negative comments, providing actionab
 
 Conclusion. This study demonstrates that transformer-based models combined with interactive visualization tools can effectively support brand reputation management in the social media era. The results highlight the value of moving beyond traditional methods toward more advanced NLP techniques while maintaining practical usability.
 
-Keywords: Sentiment Analysis, Brand Reputation Management, DistilBERT, Social Media Analytics, Topic Modeling, Streamlit Dashboard</p>
+Keywords: Sentiment Analysis, Brand Reputation Management, DistilBERT, Social Media Analytics, Topic Modeling, Streamlit Dashboard
+</p>
